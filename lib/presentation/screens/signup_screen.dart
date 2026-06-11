@@ -106,7 +106,7 @@ class _SignupScreenState extends State<SignupScreen> {
                             height: 100,
                             decoration: BoxDecoration(
                               shape: BoxShape.circle,
-                              color: Colors.black.withOpacity(0.2),
+                              color: Colors.black.withValues(alpha: 0.2),
                               border: Border.all(color: AppColors.accentColor, width: 2),
                               image: _image != null
                                   ? DecorationImage(image: FileImage(_image!), fit: BoxFit.cover)

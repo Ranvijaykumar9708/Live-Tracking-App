@@ -126,6 +126,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                   myLocationButtonEnabled: false,
                   compassEnabled: true,
                   zoomControlsEnabled: false,
+                  style: viewModel.currentMapStyle,
                 ),
                 if (!viewModel.isRideStarted)
                   Positioned(
@@ -138,7 +139,7 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                       borderRadius: BorderRadius.circular(16),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withOpacity(0.1),
+                          color: Colors.black.withValues(alpha: 0.1),
                           blurRadius: 15,
                           offset: const Offset(0, 5),
                         ),

@@ -34,6 +34,6 @@ class MarkerGenerator {
     
     final img = await pictureRecorder.endRecording().toImage(100, 100);
     final data = await img.toByteData(format: ui.ImageByteFormat.png);
-    return BitmapDescriptor.fromBytes(data!.buffer.asUint8List());
+    return BitmapDescriptor.bytes(data!.buffer.asUint8List());
   }
 }

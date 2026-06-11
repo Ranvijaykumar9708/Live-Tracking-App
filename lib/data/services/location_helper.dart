@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 class LocationHelper {
@@ -29,7 +30,7 @@ class LocationHelper {
         throw Exception("Failed to fetch location data");
       }
     } catch (e) {
-      print("LocationHelper Error: $e");
+      debugPrint("LocationHelper Error: $e");
       return [];
     }
   }
@@ -53,7 +54,7 @@ class LocationHelper {
       }
       return null;
     } catch (e) {
-      print("Geocoding Error: $e");
+      debugPrint("Geocoding Error: $e");
       return null;
     }
   }

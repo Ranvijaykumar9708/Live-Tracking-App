@@ -1,9 +1,9 @@
 import 'dart:async';
-import 'dart:convert';
+
 import 'dart:math' show cos, sin, atan2, pi;
 import 'package:flutter/material.dart';
 import 'package:google_maps_flutter/google_maps_flutter.dart';
-import 'package:flutter_polyline_points/flutter_polyline_points.dart';
+
 import 'package:geolocator/geolocator.dart';
 import '../../core/constants/map_style.dart';
 import '../../core/utils/marker_generator.dart';
@@ -67,13 +67,11 @@ class MapProvider extends ChangeNotifier {
 
   void toggleMapType() {
     mapType = mapType == MapType.normal ? MapType.satellite : MapType.normal;
-    // Remove dark theme if switching to satellite
-    if (mapType == MapType.satellite) {
-      _mapController?.setMapStyle(null);
-    } else {
-      _mapController?.setMapStyle(MapStyle.darkTheme);
-    }
     notifyListeners();
+  }
+
+  String? get currentMapStyle {
+    return mapType == MapType.satellite ? null : MapStyle.darkTheme;
   }
 
   void toggleTraffic() {
