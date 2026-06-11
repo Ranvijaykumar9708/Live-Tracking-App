@@ -115,6 +115,8 @@ class AuthProvider extends ChangeNotifier {
     required String email,
     required String mobile,
     String? imagePath,
+    String? homeAddress,
+    String? workAddress,
   }) async {
     if (_currentUser == null) return false;
     _setLoading(true);
@@ -132,6 +134,8 @@ class AuthProvider extends ChangeNotifier {
       mobile: mobile,
       password: _currentUser!.password, // keep old password
       imagePath: imagePath ?? _currentUser!.imagePath,
+      homeAddress: homeAddress ?? _currentUser!.homeAddress,
+      workAddress: workAddress ?? _currentUser!.workAddress,
     );
 
     await _repository.saveUser(updatedUser);

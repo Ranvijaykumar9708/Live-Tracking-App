@@ -16,6 +16,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
   final _nameController = TextEditingController();
   final _emailController = TextEditingController();
   final _mobileController = TextEditingController();
+  final _homeController = TextEditingController();
+  final _workController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
 
   File? _image;
@@ -30,6 +32,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       _nameController.text = user.name;
       _emailController.text = user.email;
       _mobileController.text = user.mobile;
+      _homeController.text = user.homeAddress ?? '';
+      _workController.text = user.workAddress ?? '';
       if (user.imagePath != null) {
         _image = File(user.imagePath!);
       }
@@ -54,6 +58,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
       email: _emailController.text.trim(),
       mobile: _mobileController.text.trim(),
       imagePath: _image?.path,
+      homeAddress: _homeController.text.trim().isEmpty ? null : _homeController.text.trim(),
+      workAddress: _workController.text.trim().isEmpty ? null : _workController.text.trim(),
     );
 
     if (success && mounted) {
@@ -73,6 +79,8 @@ class _ProfileScreenState extends State<ProfileScreen> {
     _nameController.dispose();
     _emailController.dispose();
     _mobileController.dispose();
+    _homeController.dispose();
+    _workController.dispose();
     super.dispose();
   }
 
@@ -146,6 +154,23 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       style: const TextStyle(color: Colors.black),
                       decoration: AppStyles.inputDecoration("Mobile Number", Icons.phone_outlined),
                       validator: (value) => (value == null || value.isEmpty) ? "Mobile is required" : null,
+                    ),
+                    const SizedBox(height: 40),
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text("Saved Places", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                    ),
+                    const SizedBox(height: 12),
+                    TextFormField(
+                      controller: _homeController,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: AppStyles.inputDecoration("Home Address", Icons.home_outlined),
+                    ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _workController,
+                      style: const TextStyle(color: Colors.black),
+                      decoration: AppStyles.inputDecoration("Work Address", Icons.work_outline),
                     ),
                     const SizedBox(height: 40),
                     SizedBox(

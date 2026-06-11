@@ -49,6 +49,13 @@ class MapProvider extends ChangeNotifier {
 
   bool _isRideStarted = false;
   bool get isRideStarted => _isRideStarted;
+
+  bool _isFindingDriver = false;
+  bool get isFindingDriver => _isFindingDriver;
+
+  Map<String, String>? driverDetails;
+  int? estimatedFare;
+
   VehicleType selectedVehicle = VehicleType.sedan;
   BitmapDescriptor? _customCarIcon;
 
@@ -140,6 +147,8 @@ class MapProvider extends ChangeNotifier {
       _totalDistanceMeters = (distDurData['distanceValue'] as num?)?.toInt() ?? 0;
       _totalDurationSeconds = (distDurData['durationValue'] as num?)?.toInt() ?? 0;
       
+      _calculateFare();
+      
       final points = await _repository.getRoutePolylines(sourceLocation!, destinationLocation!);
       if (points.isNotEmpty) {
         _polylineCoordinates.addAll(points);
@@ -157,6 +166,29 @@ class MapProvider extends ChangeNotifier {
     } catch (e) {
       debugPrint("Route Fetch Error: $e");
     }
+  }
+
+  void _calculateFare() {
+    // Basic calculation: Base fare + (₹15/km) + (₹2/min)
+    int baseFare;
+    switch (selectedVehicle) {
+      case VehicleType.bike: baseFare = 20; break;
+      case VehicleType.auto: baseFare = 40; break;
+      case VehicleType.sedan: baseFare = 60; break;
+      case VehicleType.suv: baseFare = 100; break;
+    }
+    double km = _totalDistanceMeters / 1000;
+    double mins = _totalDurationSeconds / 60;
+    
+    estimatedFare = (baseFare + (km * 15) + (mins * 2)).round();
+  }
+
+  void setSelectedVehicle(VehicleType type) {
+    selectedVehicle = type;
+    if (_totalDistanceMeters > 0) {
+      _calculateFare();
+    }
+    notifyListeners();
   }
 
   void _startMovingCar() {
@@ -231,6 +263,18 @@ class MapProvider extends ChangeNotifier {
   }
 
   void startRide() async {
+    _isFindingDriver = true;
+    notifyListeners();
+
+    await Future.delayed(const Duration(seconds: 3)); // Simulate network search
+    
+    _isFindingDriver = false;
+    driverDetails = {
+      'name': 'Ramesh Kumar',
+      'rating': '4.8',
+      'carNumber': 'UP14 CD 1234',
+    };
+
     await _generateCarIcon();
     _isRideStarted = true;
     _startMovingCar();
@@ -239,6 +283,9 @@ class MapProvider extends ChangeNotifier {
 
   void endRide() {
     _isRideStarted = false;
+    _isFindingDriver = false;
+    driverDetails = null;
+    estimatedFare = null;
     _movementTimer?.cancel();
     distanceText = null;
     durationText = null;

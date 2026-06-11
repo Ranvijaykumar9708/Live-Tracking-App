@@ -52,9 +52,6 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
         _startLocation = LatLng(position.latitude, position.longitude);
         _startController.text = "My Current Location";
       });
-      // Automatically center map to user's current location on load
-      final viewModel = Provider.of<MapProvider>(context, listen: false);
-      viewModel.centerOnUser();
     }
   }
 
@@ -235,23 +232,58 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                                   ),
                                 ),
                               ),
-                              if (_endSuggestions.isNotEmpty)
-                                SizedBox(
-                                  height: 100,
-                                  child: ListView.builder(
-                                    padding: EdgeInsets.zero,
-                                    itemCount: _endSuggestions.length,
-                                    itemBuilder: (context, index) {
-                                      return ListTile(
-                                        visualDensity: VisualDensity.compact,
-                                        leading: const Icon(Icons.location_on, color: Colors.black54, size: 20),
-                                        title: Text(_endSuggestions[index], style: const TextStyle(color: Colors.black87, fontSize: 14)),
-                                        onTap: () => _selectEndLocation(_endSuggestions[index], viewModel),
-                                      );
-                                    },
+                                if (_endSuggestions.isNotEmpty)
+                                  SizedBox(
+                                    height: 100,
+                                    child: ListView.builder(
+                                      padding: EdgeInsets.zero,
+                                      itemCount: _endSuggestions.length,
+                                      itemBuilder: (context, index) {
+                                        return ListTile(
+                                          visualDensity: VisualDensity.compact,
+                                          leading: const Icon(Icons.location_on, color: Colors.black54, size: 20),
+                                          title: Text(_endSuggestions[index], style: const TextStyle(color: Colors.black87, fontSize: 14)),
+                                          onTap: () => _selectEndLocation(_endSuggestions[index], viewModel),
+                                        );
+                                      },
+                                    ),
                                   ),
+                                const SizedBox(height: 12),
+                                // Home and Work Shortcuts
+                                Row(
+                                  children: [
+                                    ActionChip(
+                                      avatar: const Icon(Icons.home, size: 16, color: Colors.black87),
+                                      label: const Text("Home"),
+                                      backgroundColor: Colors.grey[200],
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+                                      onPressed: () {
+                                        final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+                                        if (user?.homeAddress != null && user!.homeAddress!.isNotEmpty) {
+                                          _selectEndLocation(user.homeAddress!, viewModel);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Home address not set. Update in Profile.")));
+                                        }
+                                      },
+                                    ),
+                                    const SizedBox(width: 8),
+                                    ActionChip(
+                                      avatar: const Icon(Icons.work, size: 16, color: Colors.black87),
+                                      label: const Text("Work"),
+                                      backgroundColor: Colors.grey[200],
+                                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20), side: BorderSide.none),
+                                      onPressed: () {
+                                        final user = Provider.of<AuthProvider>(context, listen: false).currentUser;
+                                        if (user?.workAddress != null && user!.workAddress!.isNotEmpty) {
+                                          _selectEndLocation(user.workAddress!, viewModel);
+                                        } else {
+                                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Work address not set. Update in Profile.")));
+                                        }
+                                      },
+                                    ),
+                                  ],
                                 ),
-                            ],
+                              ],
                           ),
                         ),
                       ],
@@ -287,130 +319,102 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
                     ],
                   ),
                 ),
-                if (viewModel.distanceText != null && viewModel.durationText != null)
+                if (viewModel.distanceText != null)
                   Positioned(
                     bottom: 0,
                     left: 0,
                     right: 0,
                     child: Container(
-                      padding: const EdgeInsets.only(top: 12, left: 24, right: 24, bottom: 32),
-                      decoration: const BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.only(topLeft: Radius.circular(24), topRight: Radius.circular(24)),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black12,
-                            blurRadius: 20,
-                            offset: Offset(0, -5),
-                          )
-                        ],
-                      ),
+                      padding: const EdgeInsets.all(24),
+                      decoration: AppStyles.glassBoxDecoration,
                       child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
+                        mainAxisSize: MainAxisSize.min,
                         children: [
-                          Center(
-                            child: Container(
-                              width: 40,
-                              height: 5,
+                          if (viewModel.isFindingDriver)
+                            const Padding(
+                              padding: EdgeInsets.all(20.0),
+                              child: Column(
+                                children: [
+                                  CircularProgressIndicator(color: Colors.black),
+                                  SizedBox(height: 16),
+                                  Text("Finding a driver near you...", style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                                ],
+                              ),
+                            )
+                          else if (viewModel.isRideStarted && viewModel.driverDetails != null)
+                            Container(
+                              padding: const EdgeInsets.all(16),
+                              margin: const EdgeInsets.only(bottom: 20),
                               decoration: BoxDecoration(
-                                color: Colors.grey.shade300,
-                                borderRadius: BorderRadius.circular(4),
+                                color: Colors.grey[100],
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          Text(viewModel.isRideStarted ? "On Trip" : "Choose a Ride", style: const TextStyle(color: Colors.black, fontSize: 22, fontWeight: FontWeight.bold)),
-                          const SizedBox(height: 16),
-                          if (!viewModel.isRideStarted)
-                            SingleChildScrollView(
-                              scrollDirection: Axis.horizontal,
                               child: Row(
-                                children: VehicleType.values.map((type) {
-                                  bool isSelected = viewModel.selectedVehicle == type;
-                                  IconData iconData;
-                                  String label;
-                                  switch (type) {
-                                    case VehicleType.bike: iconData = Icons.two_wheeler; label = "Moto"; break;
-                                    case VehicleType.auto: iconData = Icons.electric_rickshaw; label = "Auto"; break;
-                                    case VehicleType.sedan: iconData = Icons.directions_car; label = "Sedan"; break;
-                                    case VehicleType.suv: iconData = Icons.airport_shuttle; label = "SUV"; break;
-                                  }
-                                  return GestureDetector(
-                                    onTap: () => viewModel.selectVehicle(type),
-                                    child: Container(
-                                      margin: const EdgeInsets.only(right: 12),
-                                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                                      decoration: BoxDecoration(
-                                        color: isSelected ? AppColors.accentColor.withOpacity(0.1) : Colors.grey.shade100,
-                                        border: Border.all(color: isSelected ? AppColors.accentColor : Colors.grey.shade200, width: 2),
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                      child: Column(
-                                        children: [
-                                          Icon(iconData, color: isSelected ? AppColors.accentColor : Colors.black54, size: 32),
-                                          const SizedBox(height: 8),
-                                          Text(label, style: TextStyle(color: isSelected ? AppColors.accentColor : Colors.black87, fontWeight: FontWeight.bold)),
-                                        ],
-                                      ),
+                                children: [
+                                  const CircleAvatar(
+                                    radius: 25,
+                                    backgroundColor: Colors.black12,
+                                    child: Icon(Icons.person, color: Colors.black54),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(viewModel.driverDetails!['name']!, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.black87)),
+                                        Text("${viewModel.driverDetails!['rating']} ⭐", style: const TextStyle(fontSize: 14, color: Colors.black54)),
+                                      ],
                                     ),
-                                  );
-                                }).toList(),
+                                  ),
+                                  Container(
+                                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                                    decoration: BoxDecoration(color: Colors.amber[100], borderRadius: BorderRadius.circular(8)),
+                                    child: Text(viewModel.driverDetails!['carNumber']!, style: const TextStyle(fontWeight: FontWeight.bold)),
+                                  ),
+                                ],
                               ),
-                            ),
-                          if (viewModel.isRideStarted)
-                            Row(
+                            )
+                          else if (!viewModel.isRideStarted)
+                            Column(
                               children: [
-                                Container(
-                                  padding: const EdgeInsets.all(12),
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey.shade100,
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  child: Icon(
-                                    viewModel.selectedVehicle == VehicleType.bike ? Icons.two_wheeler :
-                                    viewModel.selectedVehicle == VehicleType.auto ? Icons.electric_rickshaw :
-                                    viewModel.selectedVehicle == VehicleType.suv ? Icons.airport_shuttle : Icons.directions_car,
-                                    color: AppColors.accentColor, size: 32
-                                  ),
+                                Row(
+                                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                                  children: [
+                                    const Text("Trip Details", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                    Text("${viewModel.durationText} (${viewModel.distanceText})", 
+                                      style: const TextStyle(fontSize: 16, color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
+                                  ],
                                 ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text("Your ${viewModel.selectedVehicle.name.toUpperCase()} is arriving", style: const TextStyle(color: AppColors.textPrimary, fontSize: 16, fontWeight: FontWeight.bold)),
-                                      const SizedBox(height: 4),
-                                      Text("Drop-off in ${viewModel.durationText}", style: const TextStyle(color: AppColors.textSecondary, fontSize: 14)),
-                                    ],
-                                  ),
+                                const SizedBox(height: 20),
+                                const Align(alignment: Alignment.centerLeft, child: Text("Choose a Ride", style: TextStyle(color: Colors.black87, fontWeight: FontWeight.w600))),
+                                const SizedBox(height: 12),
+                                SizedBox(
+                                  height: 120,
+                                  child: _buildVehicleSelector(viewModel),
                                 ),
-                                Text(viewModel.distanceText!, style: const TextStyle(color: AppColors.textPrimary, fontSize: 18, fontWeight: FontWeight.bold)),
+                              ],
+                            )
+                          else
+                            Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                              children: [
+                                const Text("En Route", style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: AppColors.textPrimary)),
+                                Text("${viewModel.durationText} left", style: const TextStyle(fontSize: 16, color: AppColors.primaryColor, fontWeight: FontWeight.bold)),
                               ],
                             ),
+                          
                           const SizedBox(height: 24),
-                          Container(
+                          SizedBox(
                             width: double.infinity,
                             height: 56,
-                            decoration: BoxDecoration(
-                              gradient: AppColors.primaryGradient,
-                              borderRadius: BorderRadius.circular(16),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: AppColors.primaryColor.withOpacity(0.3),
-                                  blurRadius: 15,
-                                  offset: const Offset(0, 5),
-                                ),
-                              ],
-                            ),
                             child: ElevatedButton(
                               style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.transparent,
-                                shadowColor: Colors.transparent,
+                                backgroundColor: viewModel.isRideStarted ? AppColors.errorColor : AppColors.primaryColor,
                                 shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(16),
+                                  borderRadius: BorderRadius.circular(12),
                                 ),
                               ),
-                              onPressed: () {
+                              onPressed: viewModel.isFindingDriver ? null : () {
                                 if (viewModel.isRideStarted) {
                                   viewModel.endRide();
                                   _startController.clear();
@@ -485,6 +489,57 @@ class _HomeMapScreenState extends State<HomeMapScreen> {
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildVehicleSelector(MapProvider viewModel) {
+    final types = [VehicleType.bike, VehicleType.auto, VehicleType.sedan, VehicleType.suv];
+    final titles = ["Moto", "Auto", "Sedan", "SUV"];
+    final icons = [Icons.two_wheeler, Icons.electric_rickshaw, Icons.directions_car, Icons.airport_shuttle];
+
+    return ListView.builder(
+      scrollDirection: Axis.horizontal,
+      itemCount: types.length,
+      itemBuilder: (context, index) {
+        bool isSelected = viewModel.selectedVehicle == types[index];
+        return GestureDetector(
+          onTap: () => viewModel.setSelectedVehicle(types[index]),
+          child: Container(
+            margin: const EdgeInsets.only(right: 16),
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+            decoration: BoxDecoration(
+              color: isSelected ? Colors.black : Colors.white,
+              borderRadius: BorderRadius.circular(12),
+              border: Border.all(color: isSelected ? Colors.black : Colors.grey[300]!),
+            ),
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(icons[index], size: 32, color: isSelected ? Colors.white : Colors.black87),
+                const SizedBox(height: 8),
+                Text(
+                  titles[index],
+                  style: TextStyle(
+                    color: isSelected ? Colors.white : Colors.black87,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
+                  ),
+                ),
+                if (viewModel.estimatedFare != null) ...[
+                  const SizedBox(height: 4),
+                  Text(
+                    "₹${(viewModel.estimatedFare! * (index == 3 ? 1.5 : (index == 2 ? 1.2 : (index == 1 ? 0.8 : 0.5)))).round()}",
+                    style: TextStyle(
+                      color: isSelected ? Colors.white70 : Colors.black54,
+                      fontSize: 12,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ]
+              ],
+            ),
+          ),
+        );
+      },
     );
   }
 
